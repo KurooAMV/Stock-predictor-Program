@@ -1,24 +1,24 @@
-Usage: streamlit [OPTIONS] COMMAND [ARGS]...
+[app]
+title = "Stock Price Predictor"
+sidebar_title = "Model Configuration"
+default_ticker = "MSFT"  
+start_date = "2015-01-01"  
+end_date = "2024-06-05"  
+future_date_default = "2024-06-10"  
 
-  Try out a demo with:
+[model]
+look_back = 30  
+lstm_units = 50  
+epochs = 100  
+batch_size = 64  
+optimizer = "adam"  
+loss_function = "mean_squared_error" 
 
-      $ streamlit hello
+[data]
+ticker_source_url = "https://www.google.com/finance/"  
+data_save_path = "./data"  
+model_save_path = "./saved_model/stock_price_predictor.keras"  
 
-  Or use the line below to run your own script:
-
-      $ streamlit run your_script.py
-
-Options:
-  --log_level [error|warning|info|debug]
-  --version                       Show the version and exit.
-  --help                          Show this message and exit.
-
-Commands:
-  activate  Activate Streamlit by entering your email.
-  cache     Manage the Streamlit cache.
-  config    Manage Streamlit's config settings.
-  docs      Show help in browser.
-  hello     Runs the Hello World script.
-  help      Print this help message.
-  run       Run a Python script, piping stderr to Streamlit.
-  version   Print Streamlit's version number.
+[visualization]
+figure_size = [16, 8]
+line_colors = {actual="blue", train="green", test="red"}  
