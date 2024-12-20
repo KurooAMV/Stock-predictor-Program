@@ -1,4 +1,5 @@
-website:[Stock Predictor](https://stock-predictor-program-nyusk7fuv8atceo6rp5emo.streamlit.app/)</br>
+website: [Stock Predictor](https://stock-predictor-program-nyusk7fuv8atceo6rp5emo.streamlit.app/)</br>
+</br>
 **PROBLEM :**
 Stock Price prediction and forecasting is a task that analyses the historical data of stock and predict the future stock prices.
 This is valuable for investors to understand the underlying hidden patterns of stock.
