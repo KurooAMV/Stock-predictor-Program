@@ -4,31 +4,29 @@ import yfinance as yf
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_squared_error
-from tensorflow import keras
-# import keras
 from datetime import datetime
 import streamlit as st
-from keras.src.models.sequential import Sequential
-from keras.src.layers.core.dense import Dense
-from keras.src.layers.rnn.lstm import LSTM
+import keras
 
 # start_date = '2015-01-01'
 # end_date = '2024-06-05'
 st.title("Stock Price Prediction with LSTM")
 st.sidebar.header("Inputs")
 start_date = st.sidebar.text_input("Start Date",'2015-01-01')
-end_date = st.sidebar.text_input("End Date",'2024-06-05').lower()
+end_date = st.sidebar.text_input("End Date",'2024-12-19')
 tckr = st.sidebar.text_input("Ticker",'msft')
-future_date = st.sidebar.text_input("Date for prediction","2024-12-01")
+st.sidebar.header("Model Settings")
+epochs_enter = st.sidebar.number_input("Epochs",0,200,100)
+
+
 st.markdown(
     """
-    For a list of stock tickers, you can visit [Stock Analysis](https://stockanalysis.com/stocks/) or other sources.
+    For a list of stock tickers, you can visit [Google Finance](https://www.google.com/finance/) or other sources.
     """
 )
 
 try:
     stock_data = yf.download(tickers = tckr, start=start_date, end=end_date)['Close']
-    st.write(stock_data.head(5))
 except Exception as e:
     st.error(f"Error fetching data: {e}")
     st.stop()
@@ -52,11 +50,11 @@ X_test, y_test = create_sequences(test_data, look_back)
 
 if st.button("Train Model"):
     st.write("Training LSTM model...")
-    model = Sequential()
-    model.add(LSTM(50, input_shape=(look_back, 1)))
-    model.add(Dense(1))
+    model = keras.models.Sequential()
+    model.add(keras.layers.LSTM(50, input_shape=(look_back, 1)))
+    model.add(keras.layers.Dense(1))
     model.compile(loss='mean_squared_error', optimizer='adam')
-    model.fit(X_train, y_train, epochs=100, batch_size=64, verbose=1)
+    model.fit(X_train, y_train, epochs=epochs_enter, batch_size=64, verbose=1)
     st.success("Model trained successfully")
     
     train_predictions = model.predict(X_train)
@@ -71,7 +69,7 @@ if st.button("Train Model"):
     
     train_rmse = np.sqrt(mean_squared_error(y_train, train_predictions))
     test_rmse = np.sqrt(mean_squared_error(y_test, test_predictions))
-    st.write(f"Train RMSE: {train_rmse} \n Test RMSE: {test_rmse}")
+    # st.write(f"Train RMSE: {train_rmse} \n Test RMSE: {test_rmse}")
     
     
     # print(f'Training RMSE: {train_rmse}')
@@ -85,7 +83,8 @@ if st.button("Train Model"):
     test_plot[len(train_predictions)+(look_back*2):len(stock_data), :] = test_predictions
 
     #plt.switch_backend('TkAgg')
-    st.write("Plotting Resukts")
+    # if st.button("Plot Results"):
+    st.write("Plotting Results")
     plt.figure(figsize=(16,8))
     plt.plot(scaler.inverse_transform(stock_data), label='Actual Prices', color='blue')
     plt.plot(train_plot, label='Training Predictions', color='green')
@@ -94,12 +93,16 @@ if st.button("Train Model"):
     plt.ylabel('Stock Price')
     plt.legend()
     st.pyplot(plt)
+    model.save("C:\Laptop remains\STUTI\Programa\Stock Predictor\Saved_model\Stock_model.keras")
     
+future_date = st.text_input("Date for prediction","2024-12-01")
+if st.button('Predict'):
     future_date_obj = datetime.strptime(future_date, '%Y-%m-%d').date()
     if future_date_obj > datetime.strptime(end_date, '%Y-%m-%d').date():
         # future_steps = (future_date - datetime.strptime(end_date, '%Y-%m-%t').date()).days()
         st.write(f"prediciting for future date: {future_date}")
         last_seq = stock_data[-look_back:]
+        model = keras.models.load_model("C:\Laptop remains\STUTI\Programa\Stock Predictor\Saved_model\Stock_model.keras")
         future_price = model.predict(last_seq.reshape(1,look_back,1))
         future_price = scaler.inverse_transform(future_price)
         st.success(f"Predicted Stock Price on {future_date}: {future_price[0][0]:.2f}")
