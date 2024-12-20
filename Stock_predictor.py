@@ -6,7 +6,7 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_squared_error
 from datetime import datetime
 import streamlit as st
-import keras
+from tensorflow import keras
 
 # start_date = '2015-01-01'
 # end_date = '2024-06-05'
