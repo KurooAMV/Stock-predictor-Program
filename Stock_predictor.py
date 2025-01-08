@@ -21,7 +21,7 @@ epochs_enter = st.sidebar.number_input("Epochs",0,200,100)
 
 st.markdown(
     """
-    For a list of stock tickers, you can visit [Google Finance](https://www.google.com/finance/) or other sources.
+    For a list of stock tickers, you can visit [Yahoo Finance](https://sg.finance.yahoo.com/lookup/) or other sources.
     """
 )
 
