@@ -109,7 +109,7 @@ if st.button('Predict'):
         end_price = float(stock_data[-1])
         if future_price > end_price:
             st.success(f"Predicted Stock Price on {future_date}: {future_price:.2f}")
-        elif future_price < end_price:
+        else:
             st.warning(f"Predicted Stock Price on {future_date}: {future_price:.2f}")
     else:
         st.warning("Future date must be beyond the end date of the dataset.")
