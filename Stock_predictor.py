@@ -13,7 +13,7 @@ from tensorflow import keras
 st.title("Stock Price Prediction with LSTM")
 st.sidebar.header("Inputs")
 start_date = st.sidebar.text_input("Start Date",'2015-01-01')
-end_date = st.sidebar.text_input("End Date",'2024-12-19')
+end_date = st.sidebar.text_input("End Date",'2025-01-08')
 tckr = st.sidebar.text_input("Ticker",'msft')
 st.sidebar.header("Model Settings")
 epochs_enter = st.sidebar.number_input("Epochs",0,200,100)
@@ -95,7 +95,7 @@ if st.button("Train Model"):
     st.pyplot(plt)
     model.save("C:\Laptop remains\STUTI\Programa\Stock Predictor\Saved_model\Stock_model.keras")
     
-future_date = st.text_input("Date for prediction","2024-12-01")
+future_date = st.text_input("Date for prediction","2025-01-09")
 if st.button('Predict'):
     future_date_obj = datetime.strptime(future_date, '%Y-%m-%d').date()
     if future_date_obj > datetime.strptime(end_date, '%Y-%m-%d').date():
