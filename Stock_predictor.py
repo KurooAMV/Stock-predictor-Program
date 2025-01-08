@@ -105,7 +105,10 @@ if st.button('Predict'):
         model = keras.models.load_model("C:\Laptop remains\STUTI\Programa\Stock Predictor\Saved_model\Stock_model.keras")
         future_price = model.predict(last_seq.reshape(1,look_back,1))
         future_price = scaler.inverse_transform(future_price)
-        st.success(f"Predicted Stock Price on {future_date}: {future_price[0][0]:.2f}")
+        if future_price > stock_data[-1]:
+            st.success(f"Predicted Stock Price on {future_date}: {future_price[0][0]:.2f}")
+        elif future_price<stock_data[-1]:
+            st.warning(f"Predicted Stock Price on {future_date}: {future_price[0][0]:.2f}")
     else:
         st.warning("Future date must be beyond the end date of the dataset.")
 
