@@ -93,7 +93,7 @@ if st.button("Train Model"):
     st.pyplot(plt)
     model.save("C:\Laptop remains\STUTI\Programa\Stock Predictor\Saved_model\Stock_model.keras")
     
-future_date = st.text_input("Date for prediction","2025-01-09")
+future_date = st.text_input("Date for prediction","2025-01-10")
 if st.button('Predict'):
     future_date_obj = datetime.strptime(future_date, '%Y-%m-%d').date()
     if future_date_obj > datetime.strptime(end_date, '%Y-%m-%d').date():
