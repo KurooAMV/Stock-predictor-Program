@@ -8,12 +8,10 @@ from datetime import datetime
 import streamlit as st
 from tensorflow import keras
 
-# start_date = '2015-01-01'
-# end_date = '2024-06-05'
 st.title("Stock Price Prediction with LSTM")
 st.sidebar.header("Inputs")
 start_date = st.sidebar.text_input("Start Date",'2015-01-01')
-end_date = st.sidebar.text_input("End Date",'2025-01-08')
+end_date = st.sidebar.text_input("End Date",'2025-01-09')
 tckr = st.sidebar.text_input("Ticker",'TCS.NS')
 st.sidebar.header("Model Settings")
 epochs_enter = st.sidebar.number_input("Epochs",0,200,100)
