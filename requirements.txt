@@ -4,5 +4,4 @@ panda
 yfinance
 matplotlib
 scikit-learn
-keras
-tensorflow
+keras==2.15.0
