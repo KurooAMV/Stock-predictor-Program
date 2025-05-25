@@ -96,7 +96,7 @@ if st.button("Train Model"):
         plt.plot(scaler.inverse_transform(scaled_data), label='Actual Price', color='blue')
         plt.plot(total_plot, label='Predictions', color='orange')
         plt.legend()
-        st.pyplot(plt)
+        st.line_chart(plt)
 
 # ------------------- Future Prediction -------------------
 tomorrow = datetime.today() + timedelta(days=1)
