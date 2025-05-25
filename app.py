@@ -26,9 +26,7 @@ tckr = st.sidebar.text_input("Ticker", "TCS.NS")
 start_date = st.sidebar.date_input("Start Date", datetime(2015, 1, 1))
 end_date = st.sidebar.date_input("End Date", datetime.today())
 
-# st.sidebar.header("Model Settings
 epochs_enter = 200
-# epochs_enter = st.sidebar.slider("Epochs", 1, 200, 50)
 look_back = 30
 
 MODEL_PATH = "saved_model.keras"
