@@ -49,7 +49,6 @@ def build_model(input_shape):
 # ------------------- Data Loading -------------------
 try:
     stock_data = load_data(tckr, start_date, end_date)
-    st.line_chart(stock_data)
 except Exception as e:
     st.error(f"Error fetching stock data: {e}")
     st.stop()
