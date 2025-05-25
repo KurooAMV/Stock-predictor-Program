@@ -4,118 +4,118 @@ import yfinance as yf
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_squared_error
-from datetime import timedelta, datetime
+from datetime import datetime, timedelta
 import streamlit as st
-from tensorflow import keras
+import keras
+import os
 
-st.title("Stock Price Prediction with LSTM")
+# ------------------- UI Setup -------------------
+st.set_page_config(page_title="Stock Price Predictor", layout="wide")
+st.title("📈 Stock Price Prediction with LSTM")
+
+# ------------------- Sidebar Inputs -------------------
 st.sidebar.header("Inputs")
-start_date = st.sidebar.text_input("Start Date",datetime(2015,1,1).date())
-end_date = st.sidebar.text_input("End Date",datetime.today().date())
-tckr = st.sidebar.text_input("Ticker",'TCS.NS')
+start_date = st.sidebar.date_input("Start Date", datetime(2015, 1, 1))
+end_date = st.sidebar.date_input("End Date", datetime.today())
+tckr = st.sidebar.text_input("Stock Ticker (e.g., AAPL, TCS.NS)", 'TCS.NS')
+
 st.sidebar.header("Model Settings")
-epochs_enter = st.sidebar.number_input("Epochs",0,200,100)
+epochs_enter = st.sidebar.slider("Epochs", 1, 200, 50)
+look_back = 30
 
+MODEL_PATH = "saved_model.keras"
 
-st.markdown(
-    """
-    For a list of stock tickers, you can visit [Yahoo Finance](https://finance.yahoo.com/lookup/) or other sources.
-    """
-)
-
-try:
-    stock_data = yf.download(tickers = tckr, start=start_date, end=end_date)['Close']
-    if stock_data.empty:
-        st.error("No stock data found for this ticker and date range.")
-        st.stop()
-except Exception as e:
-    st.error(f"Error fetching data: {e}")
-    st.stop()
-
-if stock_data.empty:
-    st.warning(f"No data found for '{tckr}'. Defaulting to 'AAPL'.")
-    tckr = 'AAPL'
-    stock_data = yf.download(tickers = tckr, start=start_date, end=end_date)['Close']
-    if stock_data.empty:
-        st.error("Default ticker also failed. Please check your internet or try again later.")
-        st.stop()
-
-scaler = MinMaxScaler()
-stock_data = scaler.fit_transform(stock_data.values.reshape(-1, 1))
-
-train_size = int(len(stock_data) * 0.8)
-train_data, test_data = stock_data[:train_size], stock_data[train_size:]
+# ------------------- Helper Functions -------------------
+#@st.cache_data
+def load_data(ticker, start, end):
+    data = yf.download(ticker, start=start, end=end)['Close']
+    return data
 
 def create_sequences(data, look_back):
     X, y = [], []
     for i in range(len(data) - look_back):
-        X.append(data[i:(i + look_back)])
+        X.append(data[i:i + look_back])
         y.append(data[i + look_back])
     return np.array(X), np.array(y)
 
-look_back = 30
+def build_model(input_shape):
+    model = keras.models.Sequential([
+        keras.layers.LSTM(50, input_shape=input_shape),
+        keras.layers.Dense(1)
+    ])
+    model.compile(loss='mean_squared_error', optimizer='adam')
+    return model
+
+# ------------------- Data Loading -------------------
+try:
+    stock_data = load_data(tckr, start_date, end_date)
+    st.line_chart(stock_data)
+except Exception as e:
+    st.error(f"Error fetching stock data: {e}")
+    st.stop()
+
+# ------------------- Data Preprocessing -------------------
+scaler = MinMaxScaler()
+scaled_data = scaler.fit_transform(stock_data.values.reshape(-1, 1))
+
+train_size = int(len(scaled_data) * 0.8)
+train_data, test_data = scaled_data[:train_size], scaled_data[train_size:]
+
 X_train, y_train = create_sequences(train_data, look_back)
 X_test, y_test = create_sequences(test_data, look_back)
 
+# ------------------- Model Training -------------------
 if st.button("Train Model"):
     with st.spinner("Training LSTM model..."):
-        model = keras.models.Sequential()
-        model.add(keras.layers.LSTM(50, input_shape=(look_back, 1)))
-        model.add(keras.layers.Dense(1))
-        model.compile(loss='mean_squared_error', optimizer='adam')
-        model.fit(X_train, y_train, epochs=epochs_enter, batch_size=64, verbose=1)
-        st.success("Model trained successfully")
+        model = build_model((look_back, 1))
+        model.fit(X_train, y_train, epochs=epochs_enter, batch_size=64, verbose=0)
+        model.save(MODEL_PATH)
+        st.success("Model trained and saved.")
 
         train_predictions = model.predict(X_train)
         test_predictions = model.predict(X_test)
 
-        # train_predictions = model.predict(X_train)
-        # test_predictions = model.predict(X_test)
+        # Inverse transform for plotting
         train_predictions = scaler.inverse_transform(train_predictions)
         test_predictions = scaler.inverse_transform(test_predictions)
-        y_train = scaler.inverse_transform(y_train)
-        y_test = scaler.inverse_transform(y_test)
+        y_train_inv = scaler.inverse_transform(y_train.reshape(-1, 1))
+        y_test_inv = scaler.inverse_transform(y_test.reshape(-1, 1))
 
-        train_rmse = np.sqrt(mean_squared_error(y_train, train_predictions))
-        test_rmse = np.sqrt(mean_squared_error(y_test, test_predictions))
-        # st.write(f"Train RMSE: {train_rmse} \n Test RMSE: {test_rmse}")
+        train_rmse = np.sqrt(mean_squared_error(y_train_inv, train_predictions))
+        test_rmse = np.sqrt(mean_squared_error(y_test_inv, test_predictions))
+        st.metric("Train RMSE", f"{train_rmse:.2f}")
+        st.metric("Test RMSE", f"{test_rmse:.2f}")
 
+        # Plotting
+        total_plot = np.empty_like(scaled_data)
+        total_plot[:, :] = np.nan
+        total_plot[look_back:len(train_predictions)+look_back] = train_predictions
+        total_plot[len(train_predictions)+(look_back*2):] = test_predictions
 
-        # print(f'Training RMSE: {train_rmse}')
-        # print(f'Testing RMSE: {test_rmse}')
-        train_plot = np.empty_like(stock_data)
-        train_plot[:,:] = np.nan
-        train_plot[look_back:len(train_predictions)+look_back, :] = train_predictions
-
-        test_plot = np.empty_like(stock_data)
-        test_plot[:,:] = np.nan
-        test_plot[len(train_predictions)+(look_back*2):len(stock_data), :] = test_predictions
-
-        #plt.switch_backend('TkAgg')
-        # if st.button("Plot Results"):
-        st.write("Plotting Results")
-        plt.figure(figsize=(16,8))
-        plt.plot(scaler.inverse_transform(stock_data), label='Actual Prices', color='blue')
-        plt.plot(train_plot, label='Training Predictions', color='green')
-        plt.plot(test_plot, label='Testing Predictions', color='red')
-        plt.xlabel('Time')
-        plt.ylabel('Stock Price')
+        plt.figure(figsize=(16, 6))
+        plt.plot(scaler.inverse_transform(scaled_data), label='Actual Price', color='blue')
+        plt.plot(total_plot, label='Predictions', color='orange')
         plt.legend()
-        st.pyplot(plt)
-        model.save("C:\Laptop remains\STUTI\Programa\Stock Predictor\Saved_model\Stock_model.keras")
+        st.line_chart(plt)
 
-tomorrow = datetime.today()+timedelta(days=1)
+# ------------------- Future Prediction -------------------
+tomorrow = datetime.today() + timedelta(days=1)
 future_date = st.text_input("Future Date (YYYY-MM-DD)", tomorrow.strftime("%Y-%m-%d"))
 
-if st.button('Predict'):
-    future_date_obj = datetime.strptime(future_date, '%Y-%m-%d').date()
-    if future_date_obj > datetime.strptime(end_date, '%Y-%m-%d').date():
-        # future_steps = (future_date - datetime.strptime(end_date, '%Y-%m-%t').date()).days()
-        st.write(f"prediciting for future date: {future_date}")
-        last_seq = stock_data[-look_back:]
-        model = keras.models.load_model("C:\Laptop remains\STUTI\Programa\Stock Predictor\Saved_model\Stock_model.keras")
-        future_price = model.predict(last_seq.reshape(1,look_back,1))
-        future_price = scaler.inverse_transform(future_price)
-        st.success(f"Predicted Stock Price on {future_date}: {future_price[0][0]:.2f}")
-    else:
-        st.warning("Future date must be beyond the end date of the dataset.")
+if st.button("Predict Future Price"):
+    try:
+        future_date_obj = datetime.strptime(future_date, '%Y-%m-%d').date()
+        if future_date_obj <= end_date:
+            st.warning("Choose a date beyond the dataset end date.")
+        else:
+            if not os.path.exists(MODEL_PATH):
+                st.error("Model not trained yet. Please train it first.")
+                st.stop()
+
+            model = keras.models.load_model(MODEL_PATH)
+            last_seq = scaled_data[-look_back:]
+            future_price = model.predict(last_seq.reshape(1, look_back, 1))
+            future_price = scaler.inverse_transform(future_price)
+            st.success(f"Predicted Price on {future_date}: ₹{future_price[0][0]:.2f}")
+    except Exception as e:
+        st.error(f"Prediction Error: {e}")
