@@ -13,24 +13,45 @@ import os
 st.set_page_config(page_title="Stock Price Predictor", layout="wide")
 st.title("📈 Stock Price Prediction with LSTM")
 
+# ------------------- Markdown for ticker -------------------
+st.markdown(
+    """
+    For a list of stock tickers, you can visit [Yahoo Finance](https://finance.yahoo.com/lookup/) or other sources.
+    """
+)
+
 # ------------------- Sidebar Inputs -------------------
-st.sidebar.header("Inputs")
+st.sidebar.header("Stock Parameters")
+tckr = st.sidebar.text_input("Ticker", "TCS.NS")
 start_date = st.sidebar.date_input("Start Date", datetime(2015, 1, 1))
 end_date = st.sidebar.date_input("End Date", datetime.today())
-tckr = st.sidebar.text_input("Stock Ticker (e.g., AAPL, TCS.NS)", 'TCS.NS')
 
-st.sidebar.header("Model Settings")
-epochs_enter = st.sidebar.slider("Epochs", 1, 200, 50)
+# st.sidebar.header("Model Settings
+epochs_enter = 200
+# epochs_enter = st.sidebar.slider("Epochs", 1, 200, 50)
 look_back = 30
 
 MODEL_PATH = "saved_model.keras"
 
 # ------------------- Helper Functions -------------------
-#@st.cache_data
+@st.cache_data
 def load_data(ticker, start, end):
     data = yf.download(ticker, start=start, end=end)['Close']
     return data
 
+@st.cache_data
+def fetch_stock_data(ticker, start, end):
+    try:
+        df = yf.download(ticker, start=start, end=end)
+        if df.empty or 'Close' not in df.columns:
+            return None
+        df = df[['Close']].dropna()
+        df.index = pd.to_datetime(df.index)
+        df.columns = ['Closing Price']
+        return df
+    except Exception as e:
+        return None
+    
 def create_sequences(data, look_back):
     X, y = [], []
     for i in range(len(data) - look_back):
@@ -47,12 +68,15 @@ def build_model(input_shape):
     return model
 
 # ------------------- Data Loading -------------------
-try:
-    stock_data = load_data(tckr, start_date, end_date)
+
+stock_data = fetch_stock_data(tckr, start_date, end_date)
+
+if stock_data is None:
+    st.error(f"❌ Could not retrieve data for {tckr}. Try checking the ticker symbol or change the date range.")
+else:
+    # st.success(f"✅ Data loaded for {tckr}")
     st.line_chart(stock_data)
-except Exception as e:
-    st.error(f"Error fetching stock data: {e}")
-    st.stop()
+    # st.dataframe(stock_data.tail())
 
 # ------------------- Data Preprocessing -------------------
 scaler = MinMaxScaler()
@@ -96,7 +120,9 @@ if st.button("Train Model"):
         plt.plot(scaler.inverse_transform(scaled_data), label='Actual Price', color='blue')
         plt.plot(total_plot, label='Predictions', color='orange')
         plt.legend()
-        st.line_chart(plt)
+        # st.pyplot(plt)
+        st.pyplot(plt.gcf())
+        model.save(MODEL_PATH)
 
 # ------------------- Future Prediction -------------------
 tomorrow = datetime.today() + timedelta(days=1)
